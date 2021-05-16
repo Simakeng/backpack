@@ -22,5 +22,5 @@ item["sb"] = "test"
 del item["taobao_price"]
 
 pack.UpdateContainer(m)
-
+pack.FindItem("0603 10K 电阻 新买的")
 pass

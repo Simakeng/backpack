@@ -29,6 +29,7 @@ class Backpack(object):
                 cell.storage_id = self.db.CreateCellID(cell.uuid)
                 row.append(cell)
             m.cells.append(row)
+        self.containers.append(m)
         return m
 
     def CreateItem(self):
@@ -73,3 +74,46 @@ class Backpack(object):
             if(not self.db.IsAttrClassExists(k)):
                 self.db.CreateAttrClass(uuid.uuid4().hex.upper(), k)
             self.db.SetItemAttr(item.storage_id, k, v)
+
+    def FindItem(self, human_readable_text: str):
+        '''\
+        THIS FUNCTON USE BLACK MAGIC TO LOOKUP ITEM\n
+        DO NOT TRY TO OPTMIZE!!!\n
+        UNLESS YOU WANT TO REWRITE ENTIRE REPO!!!\n
+        '''
+        human_readable_text = human_readable_text.replace('\\ ', '##AAA###')
+        select_words = list(map(lambda x: x.replace(
+            '##AAA###', ' '), set(human_readable_text.split(' '))))
+            
+        list_matched = set()
+        match_from = {}
+        result = []
+
+        for cont in self.containers:
+            for cell in cont:
+                for item in cell:
+                    for i in range(len(select_words)):
+                        key_words = select_words[i]
+                        if(key_words in item.attrs.keys()):
+                            list_matched.add(item)
+                            if(id(item) not in match_from.keys()):
+                                match_from[id(item)] = [i]
+                            else:
+                                match_from[id(item)].append(i)
+                        else:
+                            for value in item.attrs.values():
+                                if(str(value).find(key_words) != -1):
+                                    list_matched.add(item)
+                                    if(id(item) not in match_from.keys()):
+                                        match_from[id(item)] = [i]
+                                    else:
+                                        match_from[id(item)].append(i)
+                                    break
+        
+        
+        for item in list_matched:
+            if(len(match_from[id(item)]) == len(select_words)):
+                result.append(item)
+
+        return result
+
