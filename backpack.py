@@ -4,7 +4,7 @@ from Storage import Item
 import Backpack
 import os
 
-os.remove("test.db")
+# os.remove("test.db")
 pack = Backpack.Backpack("test.db")
 item = pack.CreateItem()
 item["name"] = "10K 0603 贴片电阻"

@@ -1,4 +1,5 @@
 from typing import Any
+import json
 
 
 class Item(object):
@@ -72,7 +73,7 @@ class Cell:
         self.content.add(item)
         item.parent = self
         pass
-    
+
     def __iter__(self):
         return self.content.__iter__()
 
@@ -81,7 +82,18 @@ class Cell:
 
     @property
     def flaten_data(self) -> str:
-        return ""
+        d = {
+            "type": type(self).__name__
+        }
+        if(self.parent != None):
+            d["parent_type"] = type(self.parent).__name__
+        d["cell_index"] = self.cell_index
+        return json.dumps(d)
+
+    @flaten_data.setter
+    def flaten_data(self, value):
+        data = json.loads(value)
+        self.cell_index = tuple(data["cell_index"])
 
 
 class ContainerInterface(object):
@@ -115,6 +127,11 @@ class ContainerInterface(object):
     def empty(self):
         return self.is_empty()
 
+    def set_cell(self, cell_index, value) -> Cell:
+        c = Cell()
+        c.cell_index = cell_index
+        return c
+
     def get_cell(self, cell_index) -> Cell:
         c = Cell()
         c.cell_index = cell_index
@@ -126,6 +143,11 @@ class ContainerInterface(object):
     def __getitem__(self, cell_id) -> Cell:
         return self.get_cell(cell_id)
 
+    def __setitem__(self, cell_id, value) -> Cell:
+        return self.set_cell(cell_id, value)
+
     @property
     def flaten_data(self) -> str:
-        return ""
+        return json.dumps({
+            "type": type(self).__name__
+        })

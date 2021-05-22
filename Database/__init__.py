@@ -1,6 +1,7 @@
 import sqlite3
 import os
-from typing import Dict, List
+from typing import Container, Dict, List
+import uuid
 from Storage import *
 import Storage
 
@@ -114,6 +115,58 @@ class Database(object):
 
         return attr_id
 
+    def LoadContainers(self) -> List:
+        containers = {}
+        cursor = self.db.execute(
+            '''SELECT ID,UUID,NAME,DATA FROM containers;''')
+
+        for storage_id, uid, name, data in cursor:
+            cont = Matrix()
+            cont.storage_id = storage_id
+            cont.uuid = uid
+            cont.name = name
+            cont.flaten_data = data
+            cont.cells = [[None for _ in range(
+                cont.storage_y)] for _ in range(cont.storage_x)]
+            containers[storage_id] = cont
+
+        cursor = self.db.execute(
+            '''SELECT ID,PARENT_ID,UUID,NAME,DATA FROM cells;''')
+        cells = {}
+        for storage_id, parent_id, uid, name, data in cursor:
+            cell = Cell(containers[parent_id])
+            cell.name = name
+            cell.uuid = uid
+            cell.storage_id = storage_id
+            cell.flaten_data = data
+
+            index = cell.get_index()
+
+            containers[parent_id].cells[index[0]][index[1]] = cell
+            cells[storage_id] = cell
+
+        items = {}
+        cursor = self.db.execute(
+            '''SELECT ID,PARENT_ID,UUID,NAME FROM items;''')
+        for storage_id, parent_id, uid, name in cursor:
+            item = Item()
+            item.storage_id = storage_id
+            item.parent = cells[storage_id]
+            item.uuid = uid
+            cells[parent_id].add_item(item)
+            items[storage_id] = item
+
+        cursor = self.db.execute(
+            '''SELECT ID,UUID,NAME FROM attrs;''')
+        
+        for storage_id,uid,name in cursor:
+            sql = '''SELECT ITEM_ID,VALUE FROM attr_%s''' % name
+            attr_values = self.db.execute(sql)
+            for item_id,value in attr_values:
+                items[item_id][name] = value
+
+        return list(containers.values())
+        
     # def GetAttrClassInfo(self, name: str) -> Any:
     #     result = self.db.execute(
     #         '''SELECT ID,UUID,NAME FROM attrs WHERE NAME='%s';''' % patch_str(name))

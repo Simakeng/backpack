@@ -7,7 +7,8 @@ class Backpack(object):
     def __init__(self, data_path) -> None:
         super().__init__()
         self.db = Database(data_path)
-        self.containers = []
+        self.containers = self.db.LoadContainers()
+        
 
     def CreateMatrixContainer(self, name, x, y, cell_size):
         """Create a matrix typed container"""
